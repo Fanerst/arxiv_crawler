@@ -72,7 +72,7 @@ def main():
                 raise TimeoutError("Waiting too long for connectin response.")
 
 
-    name = ['id', 'title', 'author', 'abstract']
+    name = ['id', 'url', 'title', 'author', 'abstract']
     archived_search_results_path = './paper/'
     archived_search_results_file = archived_search_results_path + 'search_archived.csv'
     if os.path.exists(archived_search_results_file):
@@ -87,10 +87,11 @@ def main():
     for i in range(len(arxiv_ids)):
         items.append(
             [
-                arxiv_ids[i].text, 
-                titles[i].text.lstrip('\nTitle: ').strip('\n'), 
+                arxiv_ids[i].text,
+                'https://arxiv.org/abs/'+arxiv_ids[i].text[6:],
+                titles[i].text.replace('\nTitle: ', '').strip('\n'), 
                 ''.join(authors[i].text.split('\n')[2:]),
-                ''.join(abstracts[i].text.split('\n'))
+                ' '.join(abstracts[i].text.split('\n'))
             ]
         )
     search_items = []
@@ -98,6 +99,7 @@ def main():
     for i in range(len(arxiv_ids_search)):
         data = [
             arxiv_ids_search[i].text,
+            'https://arxiv.org/abs/'+arxiv_ids_search[i].text[6:],
             titles_search[i].text.split('\n')[2].strip(' '),
             ''.join([string.lstrip(' ') for string in authors_search[i].text.strip('\nAuthors:\n').split('\n')]),
             abstracts_search[i].text.split('\n')[1].strip(' ')
@@ -110,8 +112,15 @@ def main():
     papers_search.to_csv(archived_search_results_file)
 
     papers = pd.DataFrame(columns=name, data=items)
-    papers = papers.drop_duplicates(subset='title', keep='first')
-    papers.to_csv('paper/'+time.strftime("%Y-%m-%d")+'_'+str(len(items))+'.csv')
+    papers = papers.drop_duplicates(subset='id', keep='first')
+    f = open('paper/'+time.strftime("%Y-%m-%d")+'.txt', 'w')
+    for p in papers.iloc:
+        paper_data = list(p)
+        for data in paper_data:
+            f.write(data + '\n')
+        f.write('\n')
+    f.close()
+    # papers.to_csv('paper/'+time.strftime("%Y-%m-%d")+'_'+str(len(items))+'.csv')
 
 
 if __name__ == '__main__':
