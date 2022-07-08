@@ -44,9 +44,12 @@ def main():
                 url = 'https://export.arxiv.org/list/'+domain+'/new'
                 html = get_one_page(url)
                 soup = BeautifulSoup(html, features='html.parser')
-                date = soup.find('h3').text
+                date = soup.find('h3').text.split(' for ')[1]
                 print(date)
-                contents = soup.find_all('dl')[:2]
+                sections = [item.text.split(' for ')[0] for item in soup.find_all('h3')]
+                all_section = soup.find_all('dl')
+                assert len(all_section) == len(sections)
+                contents = [all_section[i] for i in range(len(sections)) if sections[i] in ['New submissions', 'Cross-lists']]
                 for content in contents:
                     arxiv_ids += content.find_all('a', title = 'Abstract')
                     titles += content.find_all('div', class_ = 'list-title mathjax')
