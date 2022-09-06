@@ -9,6 +9,7 @@ from bs4 import BeautifulSoup
 from collections import Counter
 import os
 import random
+import datetime
 
 
 def get_one_page(url):
@@ -18,16 +19,19 @@ def get_one_page(url):
         "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8",
         "Accept-Language": "zh-CN,zh;q=0.8"}
     response = requests.get(url,headers=send_headers)
-    print(response.status_code) 
     while response.status_code == 403:
         time.sleep(500 + random.uniform(0, 500))
         response = requests.get(url,headers=send_headers)
         print(response.status_code)
-    print(response.status_code)
     if response.status_code == 200:
         return response.text
 
     return None
+
+def get_date_today():
+    day = datetime.date.today().strftime('%a,  %d %b %y').split(' ')
+    if day[2][0] == '0': day[2] = day[2][1:]
+    return ' '.join(day) 
 
 
 def main():
@@ -46,6 +50,11 @@ def main():
                 soup = BeautifulSoup(html, features='html.parser')
                 date = soup.find('h3').text.split(' for ')[1]
                 print(date)
+                date_today = get_date_today()
+                if date != date_today:
+                    data_collect_failure = True
+                    print('No new updates in arxiv today, or maybe try later.')
+                    return None
                 sections = [item.text.split(' for ')[0] for item in soup.find_all('h3')]
                 all_section = soup.find_all('dl')
                 assert len(all_section) == len(sections)
