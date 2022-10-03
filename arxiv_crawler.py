@@ -30,7 +30,8 @@ def get_one_page(url):
 
 def get_date_today():
     day = datetime.date.today().strftime('%a,  %d %b %y').split(' ')
-    if day[2][0] == '0': day[2] = day[2][1:]
+    if day[2][0] == '0': day[2] = ' ' + day[2][1:]
+    day.pop(1)
     return ' '.join(day) 
 
 
@@ -53,6 +54,7 @@ def main():
                 date_today = get_date_today()
                 if date != date_today:
                     data_collect_failure = True
+                    print(date_today)
                     print('No new updates in arxiv today, or maybe try later.')
                     return None
                 sections = [item.text.split(' for ')[0] for item in soup.find_all('h3')]
