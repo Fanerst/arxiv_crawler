@@ -38,52 +38,55 @@ def get_date_today():
 def main():
     data_collect_failure = False
     t0 = time.time()
-    while not data_collect_failure:
-        try:
-            domains = ['cond-mat.stat-mech', 'cond-mat.dis-nn', 'quant-ph']
-            arxiv_ids = []
-            titles = []
-            authors = []
-            abstracts = []
-            for domain in domains:
-                url = 'https://export.arxiv.org/list/'+domain+'/new'
-                html = get_one_page(url)
-                soup = BeautifulSoup(html, features='html.parser')
-                date = soup.find('h3').text.split(' for ')[1]
-                print(date)
-                date_today = get_date_today()
-                if date != date_today:
-                    data_collect_failure = True
-                    print(date_today)
-                    print('No new updates in arxiv today, or maybe try later.')
-                    return None
-                sections = [item.text.split(' for ')[0] for item in soup.find_all('h3')]
-                all_section = soup.find_all('dl')
-                assert len(all_section) == len(sections)
-                contents = [all_section[i] for i in range(len(sections)) if sections[i] in ['New submissions', 'Cross-lists']]
-                for content in contents:
-                    arxiv_ids += content.find_all('a', title = 'Abstract')
-                    titles += content.find_all('div', class_ = 'list-title mathjax')
-                    authors += content.find_all('div', class_ = 'list-authors')
-                    abstracts += content.find_all('p', 'mathjax')
+    # while not data_collect_failure:
+    try:
+        domains = ['cond-mat.stat-mech', 'cond-mat.dis-nn', 'quant-ph']
+        arxiv_ids = []
+        titles = []
+        authors = []
+        abstracts = []
+        domain_failure = [0] * len(domains)
+        for domain in domains:
+            url = 'https://export.arxiv.org/list/'+domain+'/new'
+            html = get_one_page(url)
+            soup = BeautifulSoup(html, features='html.parser')
+            date = soup.find('h3').text.split(' for ')[1]
+            print(date)
+            date_today = get_date_today()
+            if date != date_today:
+                domain_failure[domains.index(domain)] = 1
+                print(date_today)
+                print(f'No new updates in {domain} today, or maybe try later.')
+            sections = [item.text.split(' for ')[0] for item in soup.find_all('h3')]
+            all_section = soup.find_all('dl')
+            assert len(all_section) == len(sections)
+            contents = [all_section[i] for i in range(len(sections)) if sections[i] in ['New submissions', 'Cross-lists']]
+            for content in contents:
+                arxiv_ids += content.find_all('a', title = 'Abstract')
+                titles += content.find_all('div', class_ = 'list-title mathjax')
+                authors += content.find_all('div', class_ = 'list-authors')
+                abstracts += content.find_all('p', 'mathjax')
 
-            url_search = 'https://arxiv.org/search/?query=tensor+networks&searchtype=all'
-            soup_search = BeautifulSoup(get_one_page(url_search), features='html.parser')
-            content_search = soup_search.find('ol')
+        if sum(domain_failure) == len(domains):
+            return None
 
-            arxiv_ids_search = []
-            titles_search = []
-            authors_search = []
-            abstracts_search = []
-            arxiv_ids_search += [c.find_all('a')[0] for c in content_search.find_all('p', class_='list-title is-inline-block')] # content_search.find_all('p', class_='list-title is-inline-block')
-            titles_search += content_search.find_all('p', class_ = 'title is-5 mathjax')
-            authors_search += content_search.find_all('p', class_ = 'authors')
-            abstracts_search += content_search.find_all('span', class_='abstract-full has-text-grey-dark mathjax')
-            data_collect_failure = True
-        except:
-            time.sleep(3)
-            if time.time() - t0 > 500:
-                raise TimeoutError("Waiting too long for connectin response.")
+        url_search = 'https://arxiv.org/search/?query=tensor+networks&searchtype=all'
+        soup_search = BeautifulSoup(get_one_page(url_search), features='html.parser')
+        content_search = soup_search.find('ol')
+
+        arxiv_ids_search = []
+        titles_search = []
+        authors_search = []
+        abstracts_search = []
+        arxiv_ids_search += [c.find_all('a')[0] for c in content_search.find_all('p', class_='list-title is-inline-block')] # content_search.find_all('p', class_='list-title is-inline-block')
+        titles_search += content_search.find_all('p', class_ = 'title is-5 mathjax')
+        authors_search += content_search.find_all('p', class_ = 'authors')
+        abstracts_search += content_search.find_all('span', class_='abstract-full has-text-grey-dark mathjax')
+        data_collect_failure = True
+    except:
+        time.sleep(3)
+        if time.time() - t0 > 500:
+            raise TimeoutError("Waiting too long for connectin response.")
 
 
     name = ['id', 'url', 'title', 'author', 'abstract']
